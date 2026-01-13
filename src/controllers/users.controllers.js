@@ -1,0 +1,53 @@
+import { AsyncHandler } from "../utils/AsyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { _db } from "../config/_db.js";
+import { Users, Notes } from "../db/schema.js";
+import bcrypt from "bcrypt";
+import { eq } from "drizzle-orm";
+import jwt from "jsonwebtoken";
+
+const registerUser = AsyncHandler(async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    if ([name, email, password].some((field) => field?.trim() === "")) {
+      return res.status(401).json(new ApiError(401, "all fields are required"));
+    }
+    const isUserAlreadyExists = await _db
+      .select()
+      .from(Users)
+      .where(eq(Users.email, email));
+
+    if (isUserAlreadyExists[0]) {
+      return res.status(409).json(new ApiError(409, "user already exists"));
+    }
+    const hashPassword = await bcrypt.hash(password, 10);
+    const user = await _db
+      .insert(Users)
+      .values([
+        {
+          name: name,
+          email: email,
+          password: hashPassword,
+        },
+      ])
+      .$returningId();
+
+    if (!user[0]) {
+      return res
+        .status(500)
+        .json(
+          new ApiError(500, "user could not be registered. Please try again")
+        );
+    }
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "user registered succesfully"));
+  } catch (error) {
+    throw new ApiError(500, "Internal server error");
+  }
+});
+
+
+
+export { registerUser, loginUser };
