@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { _db } from "../config/_db.js";
 import { Users, Notes } from "../db/schema.js";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 
 const createNote = AsyncHandler(async (req, res) => {
   try {
@@ -78,4 +78,35 @@ const deleteNote = AsyncHandler(async (req, res) => {
     console.log(error);
   }
 });
-export { createNote, editNote, deleteNote };
+
+const getNoteByTitleContent = AsyncHandler(async (req, res) => {
+  try {
+    const { title, content } = req.query;
+    if (!(title || content))
+      return res
+        .status(401)
+        .json(new ApiError(401, "please provide required info"));
+    const notes = await _db
+      .select({
+        id: Notes.id,
+        title: Notes.title,
+        content: Notes.content,
+        createdBy: Users.name,
+        createdAt: Notes.createdAt,
+        updatedAt: Notes.updatedAt,
+      })
+      .from(Notes)
+      .innerJoin(Users, eq(Notes.createdBy, Users.id))
+      .where(or(eq(Notes.title, title), eq(Notes.content, content)));
+
+    if (notes.length === 0)
+      return res.status(404).json(new ApiError(404, "No any note found"));
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Note Found successfully", notes));
+  } catch (error) {
+    console.log(error);
+  }
+});
+export { createNote, editNote, deleteNote, getNoteByTitleContent };
