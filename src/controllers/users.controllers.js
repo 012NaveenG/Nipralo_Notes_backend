@@ -47,7 +47,50 @@ const registerUser = AsyncHandler(async (req, res) => {
     throw new ApiError(500, "Internal server error");
   }
 });
+const loginUser = AsyncHandler(async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!(email && password))
+      return res.status(401).json(new ApiError(401, "all fields are required"));
 
+    const isUserExists = await _db
+      .select()
+      .from(Users)
+      .where(eq(Users.email, email));
 
+    if (!isUserExists[0])
+      return res.status(404).json(new ApiResponse(404, "Invalid email"));
+
+    const isPasswordCorrect = await bcrypt.compare(
+      password,
+      isUserExists[0].password
+    );
+
+    if (!isPasswordCorrect)
+      return res.status(403).json(new ApiResponse(403, "Invalid password"));
+
+    const payload = {
+      id: isUserExists[0].id,
+      name: isUserExists[0].name,
+      role: isUserExists[0].role,
+    };
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
+
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+
+    return res
+      .status(200)
+      .cookie("nipralo_token", token, options)
+      .json(new ApiResponse(200, "user loggedin"));
+  } catch (error) {
+    console.log(error)
+    throw new ApiError(500, "Internal server error");
+  }
+});
 
 export { registerUser, loginUser };
