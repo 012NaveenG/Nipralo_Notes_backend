@@ -58,4 +58,24 @@ const editNote = AsyncHandler(async (req, res) => {
     console.log(error);
   }
 });
-export { createNote, editNote };
+
+const deleteNote = AsyncHandler(async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id)
+      return res.status(401).json(new ApiError(401, "all fields are required"));
+
+    const result = await _db.delete(Notes).where(eq(Notes.id, id));
+    if (result[0]?.affectedRows <= 0)
+      return res
+        .status(500)
+        .json(new ApiError(500, "Note could not be deleted. Please try again"));
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Note deleted succesfully"));
+  } catch (error) {
+    console.log(error);
+  }
+});
+export { createNote, editNote, deleteNote };
