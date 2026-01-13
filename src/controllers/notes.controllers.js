@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { _db } from "../config/_db.js";
 import { Users, Notes } from "../db/schema.js";
-import { eq, or } from "drizzle-orm";
+import { eq, like, or } from "drizzle-orm";
 
 const createNote = AsyncHandler(async (req, res) => {
   try {
@@ -97,7 +97,9 @@ const getNoteByTitleContent = AsyncHandler(async (req, res) => {
       })
       .from(Notes)
       .innerJoin(Users, eq(Notes.createdBy, Users.id))
-      .where(or(eq(Notes.title, title), eq(Notes.content, content)));
+      .where(
+        or(like(Notes.title, `%${title}%`), like(Notes.content, `%${content}%`))
+      );
 
     if (notes.length === 0)
       return res.status(404).json(new ApiError(404, "No any note found"));
