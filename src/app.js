@@ -10,5 +10,7 @@ app.use(Express.urlencoded());
 
 // import routes
 import userRoutes from "./routes/users.routes.js";
+import noteRoutes from "./routes/notes.routes.js";
 
 app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/notes", noteRoutes);
