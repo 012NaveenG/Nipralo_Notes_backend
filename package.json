@@ -1,0 +1,23 @@
+{
+  "name": "nipralo_notes",
+  "version": "1.0.0",
+  "description": "This is the assignment project assigned Nipralo Technologies.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/index.js"
+  },
+  "author": "naveen gupta",
+  "license": "ISC",
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.45.1",
+    "express": "^5.2.1",
+    "mysql2": "^3.16.0"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.8"
+  }
+}
