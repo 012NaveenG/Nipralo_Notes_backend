@@ -37,4 +37,25 @@ const createNote = AsyncHandler(async (req, res) => {
   }
 });
 
-export { createNote };
+const editNote = AsyncHandler(async (req, res) => {
+  try {
+    const { id, title, content } = req.body;
+    if (!(id && title && content))
+      return res.status(401).json(new ApiError(401, "all fields are required"));
+
+    await _db
+      .update(Notes)
+      .set({
+        title,
+        content,
+      })
+      .where(Notes.id, id);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Note updated succuessfully"));
+  } catch (error) {
+    console.log(error);
+  }
+});
+export { createNote, editNote };

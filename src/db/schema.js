@@ -8,7 +8,7 @@ export const Users = mysqlTable('users', {
   password:varchar({length:255}).notNull(),
   role:varchar({length:50}).notNull().default('viewer'),
   createdAt:timestamp().notNull().defaultNow(),
-  updatedAt:timestamp().notNull().defaultNow()
+  updatedAt:timestamp().notNull().defaultNow().onUpdateNow()
 });
 
 
@@ -18,7 +18,7 @@ export const Notes = mysqlTable('notes',{
   content:longtext().notNull(),
   createdBy:int().notNull(),
   createdAt:timestamp().notNull().defaultNow(),
-  updatedAt:timestamp().notNull().defaultNow()
+  updatedAt:timestamp().notNull().defaultNow().onUpdateNow()
 })
 
 export const UsersRelations = relations(Users, ({ many }) => ({
