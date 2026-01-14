@@ -23,7 +23,12 @@ export const Notes = mysqlTable("notes", {
   id: int().primaryKey().autoincrement(),
   title: text().notNull(),
   content: longtext().notNull(),
-  createdBy: int().notNull(),
+  createdBy: int()
+    .notNull()
+    .references(() => Users.id, {
+      onDelete: "cascade",
+      onUpdate: "cascade",
+    }),
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow().onUpdateNow(),
 });
@@ -31,7 +36,7 @@ export const Notes = mysqlTable("notes", {
 export const ActivityLogs = mysqlTable("activity_logs", {
   id: int().primaryKey().autoincrement(),
   type: varchar({ length: 100 }).notNull(),
-  user: varchar({length:100}).notNull().default("viewer"),
+  user: varchar({ length: 100 }).notNull().default("viewer"),
   user_id: int(),
   log: text().notNull(),
   ip_adress: varchar({ length: 50 }).notNull(),
