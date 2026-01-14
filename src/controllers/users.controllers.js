@@ -2,7 +2,7 @@ import { AsyncHandler } from "../utils/AsyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { _db } from "../config/_db.js";
-import { Users, Notes } from "../db/schema.js";
+import { Users, Notes, ActivityLogs } from "../db/schema.js";
 import bcrypt from "bcrypt";
 import { eq } from "drizzle-orm";
 import jwt from "jsonwebtoken";
@@ -13,6 +13,7 @@ const registerUser = AsyncHandler(async (req, res) => {
     if ([name, email, password].some((field) => field?.trim() === "")) {
       return res.status(401).json(new ApiError(401, "all fields are required"));
     }
+
     const isUserAlreadyExists = await _db
       .select()
       .from(Users)
@@ -38,6 +39,29 @@ const registerUser = AsyncHandler(async (req, res) => {
         .status(500)
         .json(
           new ApiError(500, "user could not be registered. Please try again")
+        );
+    }
+
+    const ip = req?.ip || "Unknown";
+    const userAgent = req.headers["user-agent"] || "Unknown";
+    const activitylog = await _db
+      .insert(ActivityLogs)
+      .values({
+        type: "Writing",
+        user_id: user[0].id,
+        log: "new user created",
+        ip_adress: ip,
+        user_agent: userAgent,
+      })
+      .$returningId();
+    if (!activitylog[0]) {
+      return res
+        .status(500)
+        .json(
+          new ApiError(
+            500,
+            "Something went wrong while registering user. Please try again"
+          )
         );
     }
     return res
@@ -69,6 +93,7 @@ const loginUser = AsyncHandler(async (req, res) => {
     if (!isPasswordCorrect)
       return res.status(403).json(new ApiResponse(403, "Invalid password"));
 
+    // generating token
     const payload = {
       id: isUserExists[0].id,
       name: isUserExists[0].name,
@@ -78,6 +103,29 @@ const loginUser = AsyncHandler(async (req, res) => {
       expiresIn: "1d",
     });
 
+    // Inserting data to activity log table
+    const ip = req?.ip || "Unknown";
+    const userAgent = req.headers["user-agent"] || "Unknown";
+    const activitylog = await _db
+      .insert(ActivityLogs)
+      .values({
+        type: "Reading",
+        user_id: isUserExists[0].id,
+        log: "user loggedIn",
+        ip_adress: ip,
+        user_agent: userAgent,
+      })
+      .$returningId();
+    if (!activitylog[0]) {
+      return res
+        .status(500)
+        .json(
+          new ApiError(
+            500,
+            "Something went wrong while logging user. Please try again"
+          )
+        );
+    }
     const options = {
       httpOnly: true,
       secure: true,
@@ -88,7 +136,7 @@ const loginUser = AsyncHandler(async (req, res) => {
       .cookie("nipralo_token", token, options)
       .json(new ApiResponse(200, "user loggedin"));
   } catch (error) {
-    console.log(error)
+    console.log(error);
     throw new ApiError(500, "Internal server error");
   }
 });
