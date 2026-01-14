@@ -49,6 +49,7 @@ const registerUser = AsyncHandler(async (req, res) => {
       .values({
         type: "Writing",
         user_id: user[0].id,
+
         log: "new user created",
         ip_adress: ip,
         user_agent: userAgent,
@@ -110,7 +111,8 @@ const loginUser = AsyncHandler(async (req, res) => {
       .insert(ActivityLogs)
       .values({
         type: "Reading",
-        user_id: isUserExists[0].id,
+        user_id: isUserExists[0]?.id,
+        user: isUserExists[0]?.role,
         log: "user loggedIn",
         ip_adress: ip,
         user_agent: userAgent,
