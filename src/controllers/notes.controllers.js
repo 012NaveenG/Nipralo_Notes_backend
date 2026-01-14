@@ -2,7 +2,7 @@ import { AsyncHandler } from "../utils/AsyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { _db } from "../config/_db.js";
-import { Users, Notes } from "../db/schema.js";
+import { Users, Notes, ActivityLogs } from "../db/schema.js";
 import { eq, like, or } from "drizzle-orm";
 
 const createNote = AsyncHandler(async (req, res) => {
@@ -29,6 +29,32 @@ const createNote = AsyncHandler(async (req, res) => {
       .set({ role: "editor" })
       .where(eq(Users.id, req?.user.id));
 
+    req.user["role"] = "editor";
+
+    // Inserting data to activity log table
+    const ip = req?.ip || "Unknown";
+    const userAgent = req.headers["user-agent"] || "Unknown";
+    const activitylog = await _db
+      .insert(ActivityLogs)
+      .values({
+        type: "Writing",
+        user: req.user?.role,
+        user_id: req.user?.id,
+        log: "Note created ",
+        ip_adress: ip,
+        user_agent: userAgent,
+      })
+      .$returningId();
+    if (!activitylog[0]) {
+      return res
+        .status(500)
+        .json(
+          new ApiError(
+            500,
+            "Something went wrong while creating note. Please try again"
+          )
+        );
+    }
     return res
       .status(200)
       .json(new ApiResponse(200, "Note created succesfully"));
@@ -49,8 +75,32 @@ const editNote = AsyncHandler(async (req, res) => {
         title,
         content,
       })
-      .where(Notes.id, id);
+      .where(eq(Notes.id, id));
 
+    // Inserting data to activity log table
+    const ip = req?.ip || "Unknown";
+    const userAgent = req.headers["user-agent"] || "Unknown";
+    const activitylog = await _db
+      .insert(ActivityLogs)
+      .values({
+        type: "Updating",
+        user_id: req.user?.id,
+        user: req.user?.role,
+        log: `Note edited for note_id: ${id}`,
+        ip_adress: ip,
+        user_agent: userAgent,
+      })
+      .$returningId();
+    if (!activitylog[0]) {
+      return res
+        .status(500)
+        .json(
+          new ApiError(
+            500,
+            "Something went wrong while updating note. Please try again"
+          )
+        );
+    }
     return res
       .status(200)
       .json(new ApiResponse(200, "Note updated succuessfully"));
@@ -71,6 +121,30 @@ const deleteNote = AsyncHandler(async (req, res) => {
         .status(500)
         .json(new ApiError(500, "Note could not be deleted. Please try again"));
 
+    // Inserting data to activity log table
+    const ip = req?.ip || "Unknown";
+    const userAgent = req.headers["user-agent"] || "Unknown";
+    const activitylog = await _db
+      .insert(ActivityLogs)
+      .values({
+        type: "Deleting",
+        user_id: req.user?.id,
+        user: req.user?.role,
+        log: "Note Deleted",
+        ip_adress: ip,
+        user_agent: userAgent,
+      })
+      .$returningId();
+    if (!activitylog[0]) {
+      return res
+        .status(500)
+        .json(
+          new ApiError(
+            500,
+            "Something went wrong while deleting note. Please try again"
+          )
+        );
+    }
     return res
       .status(200)
       .json(new ApiResponse(200, "Note deleted succesfully"));
@@ -104,6 +178,30 @@ const getNoteByTitleContent = AsyncHandler(async (req, res) => {
     if (notes.length === 0)
       return res.status(404).json(new ApiError(404, "No any note found"));
 
+    // Inserting data to activity log table
+    const ip = req?.ip || "Unknown";
+    const userAgent = req.headers["user-agent"] || "Unknown";
+    const activitylog = await _db
+      .insert(ActivityLogs)
+      .values({
+        type: "Reading",
+        user_id: req.user?.id,
+        user: req.user?.role,
+        log: "Note fetched",
+        ip_adress: ip,
+        user_agent: userAgent,
+      })
+      .$returningId();
+    if (!activitylog[0]) {
+      return res
+        .status(500)
+        .json(
+          new ApiError(
+            500,
+            "Something went wrong while fetching note. Please try again"
+          )
+        );
+    }
     return res
       .status(200)
       .json(new ApiResponse(200, "Note Found successfully", notes));
