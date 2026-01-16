@@ -21,16 +21,60 @@ export const Users = mysqlTable("users", {
 
 export const Notes = mysqlTable("notes", {
   id: int().primaryKey().autoincrement(),
+
   title: text().notNull(),
   content: longtext().notNull(),
+
   createdBy: int()
     .notNull()
     .references(() => Users.id, {
       onDelete: "cascade",
       onUpdate: "cascade",
     }),
+
   createdAt: timestamp().notNull().defaultNow(),
   updatedAt: timestamp().notNull().defaultNow().onUpdateNow(),
+});
+
+export const NoteCollaborators = mysqlTable("note_collaborators", {
+  id: int().primaryKey().autoincrement(),
+
+  noteId: int()
+    .notNull()
+    .references(() => Notes.id, {
+      onDelete: "cascade",
+    }),
+
+  userId: int()
+    .notNull()
+    .references(() => Users.id, {
+      onDelete: "cascade",
+    }),
+
+  role: text().notNull().default("editor"), // editor | owner | viewer
+
+  addedAt: timestamp().defaultNow(),
+});
+
+export const NoteActivities = mysqlTable("note_activities", {
+  id: int().primaryKey().autoincrement(),
+
+  noteId: int()
+    .notNull()
+    .references(() => Notes.id, {
+      onDelete: "cascade",
+    }),
+
+  userId: int()
+    .notNull()
+    .references(() => Users.id, {
+      onDelete: "cascade",
+    }),
+
+  action: text().notNull(),
+  // CREATE | UPDATE | DELETE | JOIN | LEAVE
+
+  createdAt: timestamp().defaultNow(),
 });
 
 export const ActivityLogs = mysqlTable("activity_logs", {
@@ -40,7 +84,7 @@ export const ActivityLogs = mysqlTable("activity_logs", {
   user_id: int(),
   log: text().notNull(),
   ip_adress: varchar({ length: 50 }).notNull(),
-  user_agent: varchar({ length: 50 }).notNull(),
+  user_agent: text().notNull(),
   created_at: timestamp().notNull().defaultNow(),
 });
 
