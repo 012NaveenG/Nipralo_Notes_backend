@@ -84,7 +84,7 @@ const loginUser = AsyncHandler(async (req, res) => {
       .where(eq(Users.email, email));
 
     if (!isUserExists[0])
-      return res.status(404).json(new ApiResponse(404, "Invalid email"));
+      return res.status(404).json(new ApiError(404, "Invalid Credentials"));
 
     const isPasswordCorrect = await bcrypt.compare(
       password,
@@ -92,7 +92,7 @@ const loginUser = AsyncHandler(async (req, res) => {
     );
 
     if (!isPasswordCorrect)
-      return res.status(403).json(new ApiResponse(403, "Invalid password"));
+      return res.status(403).json(new ApiError(403, "Invalid Credentials"));
 
     // generating token
     const payload = {
