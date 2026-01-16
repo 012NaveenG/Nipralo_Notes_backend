@@ -209,4 +209,43 @@ const getNoteByTitleContent = AsyncHandler(async (req, res) => {
     console.log(error);
   }
 });
-export { createNote, editNote, deleteNote, getNoteByTitleContent };
+
+const getAllNoteByUserId = AsyncHandler(async (req, res) => {
+  try {
+    const notes = await _db
+      .select()
+      .from(Notes)
+      .where(eq(Notes.createdBy, req.user?.id));
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Notes Found successfully", notes));
+  } catch (error) {
+    console.log(error);
+  }
+});
+const getNoteByNoteId = AsyncHandler(async (req, res) => {
+  try {
+    const { noteId } = req.params;
+    if (!noteId)
+      return res
+        .status(401)
+        .json(new ApiError(401, "please provide required info"));
+
+    const note = await _db.select().from(Notes).where(eq(Notes.id, noteId));
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, "Note Found successfully", note[0]));
+  } catch (error) {
+    console.log(error);
+  }
+});
+export {
+  createNote,
+  editNote,
+  deleteNote,
+  getNoteByTitleContent,
+  getAllNoteByUserId,
+  getNoteByNoteId
+};
