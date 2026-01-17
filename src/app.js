@@ -14,3 +14,5 @@ import noteRoutes from "./routes/notes.routes.js";
 
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/notes", noteRoutes);
+
+app.get("", (req, res) => res.send("welcome to nipralo notes"));
