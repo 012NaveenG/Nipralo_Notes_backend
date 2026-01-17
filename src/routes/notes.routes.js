@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  AddNoteCollaborator,
   createNote,
   deleteNote,
   editNote,
@@ -17,4 +18,5 @@ router.route("/").get(verifyJWT, getNoteByTitleContent); //  for query parameter
 
 router.route("/get-user-notes").get(verifyJWT, getAllNoteByUserId);
 router.route("/get-note/:noteId").get(verifyJWT, getNoteByNoteId);
+router.route("/collaborate").post(verifyJWT, AddNoteCollaborator);
 export default router;
