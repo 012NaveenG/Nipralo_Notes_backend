@@ -7,7 +7,10 @@ export const app = Express();
 
 app.use(cookieParser());
 app.use(
-  cors(),
+  cors({
+    origin: 'https://nipralo-notes-client.vercel.app',
+    credentials: true,
+  }),
 );
 
 app.use(Express.json());
