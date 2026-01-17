@@ -263,7 +263,8 @@ const AddNoteCollaborator = AsyncHandler(async (req, res) => {
 
     const result = await _db
       .insert(NoteCollaborators)
-      .values({ noteId, userId: collaborator[0].id }).$returningId();
+      .values({ noteId, userId: collaborator[0].id })
+      .$returningId();
 
     if (!result)
       return res
@@ -276,6 +277,34 @@ const AddNoteCollaborator = AsyncHandler(async (req, res) => {
     console.log(error);
   }
 });
+const GetSharedNotes = AsyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    return res.status(401).json(new ApiResponse(401, "Unauthorized"));
+  }
+
+  // Join collaborators with notes
+  const sharedNotes = await _db
+    .select({
+      id: Notes.id,
+      title: Notes.title,
+      content: Notes.content,
+      createdBy: Notes.createdBy,
+      createdAt: Notes.createdAt,
+      updatedAt: Notes.updatedAt,
+      role: NoteCollaborators.role,
+    })
+    .from(NoteCollaborators)
+    .innerJoin(Notes, eq(NoteCollaborators.noteId, Notes.id))
+    .where(eq(NoteCollaborators.userId, userId));
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, "Shared notes fetched successfully", sharedNotes),
+    );
+});
 
 export {
   createNote,
@@ -285,4 +314,5 @@ export {
   getAllNoteByUserId,
   getNoteByNoteId,
   AddNoteCollaborator,
+  GetSharedNotes,
 };
