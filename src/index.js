@@ -1,6 +1,8 @@
 import http from "http";
 import { Server } from "socket.io";
 import { app } from "./app.js";
+import dotenv from "dotenv";
+dotenv.config("./.env");
 
 const server = http.createServer(app);
 
@@ -70,6 +72,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(12345, () =>
-  console.log(`Server is running at http://localhost:12345`),
+server.listen(process.env.PORT || 12345, () =>
+  console.log(`Server is running at http://localhost:${process.env.PORT }`),
 );
