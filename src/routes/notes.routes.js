@@ -7,6 +7,7 @@ import {
   getAllNoteByUserId,
   getNoteByNoteId,
   getNoteByTitleContent,
+  GetSharedNotes,
 } from "../controllers/notes.controllers.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -19,4 +20,5 @@ router.route("/").get(verifyJWT, getNoteByTitleContent); //  for query parameter
 router.route("/get-user-notes").get(verifyJWT, getAllNoteByUserId);
 router.route("/get-note/:noteId").get(verifyJWT, getNoteByNoteId);
 router.route("/collaborate").post(verifyJWT, AddNoteCollaborator);
+router.route("/shared-notes").get(verifyJWT, GetSharedNotes);
 export default router;
