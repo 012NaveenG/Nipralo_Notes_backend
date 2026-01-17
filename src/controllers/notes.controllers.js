@@ -2,7 +2,7 @@ import { AsyncHandler } from "../utils/AsyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { _db } from "../config/_db.js";
-import { Users, Notes, ActivityLogs } from "../db/schema.js";
+import { Users, Notes, ActivityLogs, NoteCollaborators } from "../db/schema.js";
 import { eq, like, or } from "drizzle-orm";
 
 const createNote = AsyncHandler(async (req, res) => {
@@ -51,8 +51,8 @@ const createNote = AsyncHandler(async (req, res) => {
         .json(
           new ApiError(
             500,
-            "Something went wrong while creating note. Please try again"
-          )
+            "Something went wrong while creating note. Please try again",
+          ),
         );
     }
     return res
@@ -97,8 +97,8 @@ const editNote = AsyncHandler(async (req, res) => {
         .json(
           new ApiError(
             500,
-            "Something went wrong while updating note. Please try again"
-          )
+            "Something went wrong while updating note. Please try again",
+          ),
         );
     }
     return res
@@ -141,8 +141,8 @@ const deleteNote = AsyncHandler(async (req, res) => {
         .json(
           new ApiError(
             500,
-            "Something went wrong while deleting note. Please try again"
-          )
+            "Something went wrong while deleting note. Please try again",
+          ),
         );
     }
     return res
@@ -172,7 +172,10 @@ const getNoteByTitleContent = AsyncHandler(async (req, res) => {
       .from(Notes)
       .innerJoin(Users, eq(Notes.createdBy, Users.id))
       .where(
-        or(like(Notes.title, `%${title}%`), like(Notes.content, `%${content}%`))
+        or(
+          like(Notes.title, `%${title}%`),
+          like(Notes.content, `%${content}%`),
+        ),
       );
 
     if (notes.length === 0)
@@ -198,8 +201,8 @@ const getNoteByTitleContent = AsyncHandler(async (req, res) => {
         .json(
           new ApiError(
             500,
-            "Something went wrong while fetching note. Please try again"
-          )
+            "Something went wrong while fetching note. Please try again",
+          ),
         );
     }
     return res
@@ -241,11 +244,45 @@ const getNoteByNoteId = AsyncHandler(async (req, res) => {
     console.log(error);
   }
 });
+
+const AddNoteCollaborator = AsyncHandler(async (req, res) => {
+  try {
+    const { email, noteId } = req?.body;
+    if (!(email && noteId))
+      return res
+        .status(401)
+        .json(new ApiError(401, "please provide required info"));
+
+    const collaborator = await _db
+      .select()
+      .from(Users)
+      .where(eq(Users.email, email));
+
+    if (!collaborator[0])
+      return res.status(404).json(new ApiError(404, "Invalid Collaborator"));
+
+    const result = await _db
+      .insert(NoteCollaborators)
+      .values({ noteId, userId: collaborator[0].id }).$returningId();
+
+    if (!result)
+      return res
+        .status(500)
+        .json(
+          new ApiError(500, "Could not add collaborator. Please try again"),
+        );
+    return res.status(200).json(new ApiResponse(200, "Collaborator Added"));
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 export {
   createNote,
   editNote,
   deleteNote,
   getNoteByTitleContent,
   getAllNoteByUserId,
-  getNoteByNoteId
+  getNoteByNoteId,
+  AddNoteCollaborator,
 };
