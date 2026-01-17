@@ -1,8 +1,10 @@
 import Express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-
+import dotenv from "dotenv";
+dotenv.config("./.env");
 export const app = Express();
+
 app.use(cookieParser());
 app.use(
   cors({

@@ -1,9 +1,9 @@
 import http from "http";
 import { Server } from "socket.io";
 import { app } from "./app.js";
-
+import dotenv from "dotenv";
+dotenv.config("./.env");
 const server = http.createServer(app);
-
 const io = new Server(server, {
   cors: {
     origin: process.env.FRONTEND_URL,
