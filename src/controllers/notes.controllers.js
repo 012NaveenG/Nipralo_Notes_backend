@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { _db } from "../config/_db.js";
 import { Users, Notes, ActivityLogs, NoteCollaborators } from "../db/schema.js";
 import { eq, like, or } from "drizzle-orm";
+import { io } from "../index.js";
 
 const createNote = AsyncHandler(async (req, res) => {
   try {
@@ -66,46 +67,58 @@ const createNote = AsyncHandler(async (req, res) => {
 const editNote = AsyncHandler(async (req, res) => {
   try {
     const { id, title, content } = req.body;
-    if (!(id && title && content))
-      return res.status(401).json(new ApiError(401, "all fields are required"));
 
+    if (!id) {
+      return res.status(400).json(new ApiError(400, "Note id is required"));
+    }
+
+    if (!title && !content) {
+      return res.status(400).json(new ApiError(400, "Nothing to update"));
+    }
+
+    /* ================= UPDATE NOTE ================= */
     await _db
       .update(Notes)
       .set({
-        title,
-        content,
+        ...(title !== undefined && { title }),
+        ...(content !== undefined && { content }),
+        updatedAt: new Date(),
       })
       .where(eq(Notes.id, id));
 
-    // Inserting data to activity log table
-    const ip = req?.ip || "Unknown";
-    const userAgent = req.headers["user-agent"] || "Unknown";
-    const activitylog = await _db
-      .insert(ActivityLogs)
-      .values({
-        type: "Updating",
-        user_id: req.user?.id,
-        user: req.user?.role,
-        log: `Note edited for note_id: ${id}`,
-        ip_adress: ip,
-        user_agent: userAgent,
-      })
-      .$returningId();
-    if (!activitylog[0]) {
-      return res
-        .status(500)
-        .json(
-          new ApiError(
-            500,
-            "Something went wrong while updating note. Please try again",
-          ),
-        );
+    /* ================= FETCH UPDATED NOTE ================= */
+    const [updatedNote] = await _db
+      .select()
+      .from(Notes)
+      .where(eq(Notes.id, id));
+
+    if (!updatedNote) {
+      return res.status(404).json(new ApiError(404, "Note not found"));
     }
+
+  
+    // /* ================= SOCKET EMIT ================= */
+    io?.to(`note-${id}`).emit("note:update", updatedNote);
+
+    /* ================= ACTIVITY LOG ================= */
+    const ip = req.ip || "Unknown";
+    const userAgent = req.headers["user-agent"] || "Unknown";
+
+    await _db.insert(ActivityLogs).values({
+      type: "UPDATE",
+      user_id: req.user?.id,
+      user: req.user?.role,
+      log: `Note edited (note_id=${id})`,
+      ip_adress: ip,
+      user_agent: userAgent,
+    });
+
     return res
       .status(200)
-      .json(new ApiResponse(200, "Note updated succuessfully"));
+      .json(new ApiResponse(200, "Note updated successfully", updatedNote));
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    return res.status(500).json(new ApiError(500, "Internal server error"));
   }
 });
 
