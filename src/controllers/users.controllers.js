@@ -38,7 +38,7 @@ const registerUser = AsyncHandler(async (req, res) => {
       return res
         .status(500)
         .json(
-          new ApiError(500, "user could not be registered. Please try again")
+          new ApiError(500, "user could not be registered. Please try again"),
         );
     }
 
@@ -61,8 +61,8 @@ const registerUser = AsyncHandler(async (req, res) => {
         .json(
           new ApiError(
             500,
-            "Something went wrong while registering user. Please try again"
-          )
+            "Something went wrong while registering user. Please try again",
+          ),
         );
     }
     return res
@@ -88,7 +88,7 @@ const loginUser = AsyncHandler(async (req, res) => {
 
     const isPasswordCorrect = await bcrypt.compare(
       password,
-      isUserExists[0].password
+      isUserExists[0].password,
     );
 
     if (!isPasswordCorrect)
@@ -124,8 +124,8 @@ const loginUser = AsyncHandler(async (req, res) => {
         .json(
           new ApiError(
             500,
-            "Something went wrong while logging user. Please try again"
-          )
+            "Something went wrong while logging user. Please try again",
+          ),
         );
     }
     const options = {
@@ -136,7 +136,12 @@ const loginUser = AsyncHandler(async (req, res) => {
     return res
       .status(200)
       .cookie("nipralo_token", token, options)
-      .json(new ApiResponse(200, "user loggedin"));
+      .json(
+        new ApiResponse(200, "user loggedin", {
+          id: isUserExists[0].id,
+          name: isUserExists[0].name,
+        }),
+      );
   } catch (error) {
     console.log(error);
     throw new ApiError(500, "Internal server error");
