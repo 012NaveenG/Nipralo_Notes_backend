@@ -148,4 +148,12 @@ const loginUser = AsyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, loginUser };
+const logoutUser = AsyncHandler(async (req, res) => {
+  try {
+    res.clearCookie("nipralo_token").json(new ApiResponse(200, "User log out"));
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+export { registerUser, loginUser, logoutUser };
