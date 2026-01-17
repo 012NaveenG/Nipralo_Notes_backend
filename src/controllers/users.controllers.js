@@ -150,9 +150,17 @@ const loginUser = AsyncHandler(async (req, res) => {
 
 const logoutUser = AsyncHandler(async (req, res) => {
   try {
-    res.clearCookie("nipralo_token").json(new ApiResponse(200, "User log out"));
+    res
+      .clearCookie("nipralo_token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      })
+      .status(200)
+      .json(new ApiResponse(200, "User logged out successfully"));
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    res.status(500).json(new ApiError(500, "Failed to logout user"));
   }
 });
 
